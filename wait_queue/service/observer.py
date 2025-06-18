@@ -1,5 +1,5 @@
 from repository.redis_repo import RedisRepo
-
+from fastapi import WebSocket
 
 class WaitQueueObserver:
     def __init__(self, redis:RedisRepo):
@@ -7,8 +7,9 @@ class WaitQueueObserver:
         self.ws_dict = {}  # 소켓 목록 "token_uuid": websocket
 
         
-    # 대기열 큐에 유저 추가. 웹소켓도 딕셔너리에 추가
-    async def attach(self):
+    # 웹소켓 딕셔너리에 추가
+    # ***** 사용자 웹소켓을 받았을 때, 토큰으로 redis 대기열에 있는지 검증하고 저장. 
+    async def attach(self, ws:WebSocket):
         ...
         
 
