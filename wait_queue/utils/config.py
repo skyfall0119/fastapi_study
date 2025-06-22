@@ -1,0 +1,14 @@
+
+## REDIS
+TTL_EXPIRE = 3600
+TOKEN_WAIT = "wait"
+TOKEN_ACTIVE = "active"
+WAIT_QUEUE_KEY = "wait_queue"
+TOKEN_PREFIX = "token:"
+ACTIVE_SET_KEY = "active_tokens"
+ACTIVE_COUNT_KEY = "active_count"
+ACTIVE_VALIDATE_INTERVAL = 60
+WAIT_NOTIFY_INTERVAL = 5
+
+
+MAX_ACTIVE_SET = 100

@@ -12,11 +12,12 @@ Strategy Pattern: 다양한 대기열 전략 (선착순, 우선순위 기반 등
 Observer Pattern: 순서 도착 시 사용자에게 알림 전송(이벤트 기반)
 클린 아키텍처로 구현 (편집됨) 
 
-기타 참고할 만한 유튜브 
 --------------------------------------------------------------------------------------------------------
 REDIS
 op1. wsl 에서 백그라운드 서비스로 서버 실행 (로컬 개발/테스트.  단일서버) sudo apt install redis-server
 op2. redis.io redis 클라우드  (서버 스케일아웃시)
+
+이번 예제에서는 wsl 로
 
 사용 pip 패키지
 - redis : 공식 asyncio 클라이언트
@@ -47,15 +48,19 @@ repository
     - 싱글톤 패턴으로 구현 
     - redis 인스턴스 반환
 
-
-
 services
-- queue.py
-    - 대기열 관련 로직
+- db_service.py
+    - 대기열큐 (Strategy Pattern) 로직 캡슐화
+        - FIFO >>> rpush, lpop. (list)
+        - Priority >>> zadd, zrange, zrem  (sorted set)
+    - 사용자큐 
+        - set   >>> sadd, srem, sismember, smembers, scard
+    - db서비스
+        - 토큰 생성, 사용자 대기열에서 사용자리스트로 .
 - monitor.py
-    - redis 모니터링 관련
+    - redis 모니터링 pub/sub  -> 초기화될때 async task 로 백그라운드 실행.
     - TTL 감지 및 접속자수 -1
-    - 주기적으로 길기 검증
+    - 주기적으로 접속자수 검증
 - observer.py
-    - 대기순번 notify
-    - 대기열 push pop
+    - 대기순번 get (polling) 후 대기인원들에게 notify
+    - 대기열 push pop (dbservice)

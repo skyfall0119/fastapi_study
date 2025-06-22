@@ -1,12 +1,15 @@
 from fastapi import APIRouter
 from model.models import TokenResponse
-
+from service.db_service import DbService
+from repository.redis_repo import RedisRepo
 
 router = APIRouter(prefix="/token")
 
 @router.post("", response_model=TokenResponse)
 async def generate_token():
-    ## 1. 토큰 생성. 초기상태 waiting
-    ## 3. redis wait 큐 등록
-    ...
+    redis = await RedisRepo.get_instance()
+    db_service = DbService(redis)
+    token = await db_service.create_token()
+    return token
+
     
