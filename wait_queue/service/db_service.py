@@ -1,3 +1,4 @@
+import random
 import uuid
 import time
 from redis.asyncio import Redis
@@ -53,9 +54,11 @@ class PriorityQueue:
         
     ## 대기열 추가
     # time 기반으로 우선순위 설정.
+    # 들어오는 시간이 겹쳐서 꼬임 방지 
+    # score = time.time() + random.uniform(0, 0.01)
     async def insert(self, token:TokenResponse)->None:
         token_key = f"{self.token_prefix}{token.uuid}"
-        score = time.time() 
+        score = time.time()
         await self.redis.zadd(self.queue_key, {token.uuid: score})
         await self.redis.set(token_key, WAIT)
         

@@ -1,7 +1,7 @@
 from redis.asyncio import Redis
 from utils import config
 import asyncio
-from db_service import ActiveList
+from service.db_service import ActiveList
 from repository.redis_repo import RedisRepo
 
 

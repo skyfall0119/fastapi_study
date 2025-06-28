@@ -1,5 +1,5 @@
 from redis.asyncio import Redis
-from db_service import DbService
+from service.db_service import DbService
 from fastapi import WebSocket
 from utils import config
 from model.models import TokenResponse

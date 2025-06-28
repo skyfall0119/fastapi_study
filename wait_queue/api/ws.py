@@ -13,8 +13,9 @@ async def websocket_endpoint(websocket: WebSocket,
     
     try:
         data = await websocket.receive_text()
-        # {"uuid": "abcd-1234", "status": "wait"}
+        # {"uuid": "abcd-1234"}
         parsed = json.loads(data)
+        # TODO: status 제거
         token = TokenResponse(**parsed)
         
         # 웹소켓 추가
