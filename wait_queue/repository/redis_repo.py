@@ -1,6 +1,6 @@
 from redis.asyncio import Redis
 from redis.exceptions import RedisError, ConnectionError
-
+from utils import config
 class RedisRepo:
     """Redis 싱글톤 객체"""
     _instance = None
@@ -10,8 +10,8 @@ class RedisRepo:
         if cls._instance is None:
             try:
                 cls._instance = Redis(
-                    host="172.25.239.217/20",
-                    port=6379,
+                    host=config.REDIS_HOST,
+                    port=config.REDIS_PORT,
                     decode_responses=True,
                     max_connections=10
                 )

@@ -33,9 +33,9 @@ async def websocket_endpoint(websocket: WebSocket,
 
 
 
-## Option 2 : polling 기반 대기순번 받기
-@router.get("/wait")
-async def wait_position(token: str,
-                        observer:WaitQueueObserver = Depends(get_observer)
-                        ):
-    ...
+# ## Option 2 : polling 기반 대기순번 받기
+# @router.get("/wait")
+# async def wait_position(token: str,
+#                         observer:WaitQueueObserver = Depends(get_observer)
+#                         ):
+#     ...
