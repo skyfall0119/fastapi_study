@@ -5,6 +5,9 @@ from redis.asyncio import Redis
 from model.models import TokenResponse
 from repository.redis_repo import RedisRepo 
 from utils import config
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 WAIT = config.TOKEN_WAIT
@@ -23,15 +26,21 @@ class FIFOQueue:
     ## 대기열 추가
     async def insert(self, token: TokenResponse) -> None:
         token_key = self.token_prefix + token.uuid 
+        logger.info(f"waitqueue: insert {token_key}")
         await self.redis.rpush(self.queue_key, token.uuid)
         await self.redis.set(token_key, token.status)
         
+        
     ## 대기열 pop 
     async def pop(self)-> TokenResponse | None:
-        uuid = await self.redis.lpop(self.queue_key)
-        if uuid:
-            return TokenResponse(uuid=uuid, status=ACTIVE)
-        return None
+        try:
+            uuid = await self.redis.lpop(self.queue_key)
+            if uuid:
+                logger.info(f"waitqueue: pop {uuid}. active")
+                return TokenResponse(uuid=uuid, status=ACTIVE)
+            return None
+        except Exception as e:
+            logger.error(f"waitqueue: pop error {e}")
     
     # 대기열 리스트 반환
     async def get_all_waiting(self) -> list[str]:
@@ -89,34 +98,50 @@ class ActiveList:
         self.token_prefix = config.TOKEN_PREFIX
         self.ttl = config.TTL_EXPIRE
         self.active_count_key = config.ACTIVE_COUNT_KEY
+        logger.info("activelist: init")
     
     # 유저 추가
     async def add_to_active(self, token: TokenResponse) -> None:
+        # add token
         await self.redis.sadd(self.set_key, token.uuid)
         token_key = self.token_prefix + token.uuid 
+
+        # set key status to active
         await self.redis.set(token_key, ACTIVE)
+        # set key expiration
         await self.redis.expire(token_key, self.ttl) 
+
+        logger.info(f"activelist: set token : {token_key}")
         
         # 변수 업데이트
         await self.redis.incr(self.active_count_key)
+        logger.info(f"activelist: update active_count : {self.active_count_key}")
 
     # 유저 제거 (토큰 만료시 이 함수를 부르면 될듯)
     async def remove(self, token_uuid:str) -> None:
-        if await self.exists(token_uuid=token_uuid):
+        logger.info(f"activelist: remove {token_uuid}")
+        try:
+            # if await self.exists(token_uuid=token_uuid):
             await self.redis.srem(self.set_key, token_uuid) #삭제
             await self.redis.decr(self.active_count_key) # -1
-
+        except Exception as e:
+            logger.error(f"activelist: error remove {e}")
+            
     # 사용자 uuid 있는지 검사
     async def exists(self, token_uuid: str) -> bool:
         # activelist에 있는지
-        in_set = await self.redis.sismember(self.set_key, token_uuid)
-        if not in_set:
+        try:
+            in_set = await self.redis.sismember(self.set_key, token_uuid)
+            if not in_set:
+                return False
+            
+            # 토큰이 있는지.
+            token_key = self.token_prefix + token_uuid
+            token_exists = await self.redis.exists(token_key)
+            return token_exists == 1
+        except Exception as e:
+            logger.error(f"activelist: error exists {e}")
             return False
-        
-        # 토큰이 있는지.
-        token_key = self.token_prefix + token_uuid
-        token_exists = await self.redis.exists(token_key)
-        return token_exists == 1
 
     # 현재 사용자수 리턴
     async def count(self) -> int:
@@ -133,14 +158,17 @@ class DbService:
         self.wait_queue = FIFOQueue(redis) ## 대기열 큐 갈아끼우기 편하게
         self.active_set = ActiveList(redis)
         self.max_user = config.MAX_ACTIVE_SET
+        self.test_usr_num = 0
 
 
     # 토큰 생성 / db에 추가, 사용자에게 반환
     async def create_token(self) -> TokenResponse:
         token = TokenResponse(
-            uuid=str(uuid.uuid4()),
+            # uuid=str(uuid.uuid4()),
+            uuid=f"test-user-{self.test_usr_num}",
             status=WAIT
         )
+        self.test_usr_num+=1
         await self.wait_queue.insert(token)
         # websocket 추가
         return token

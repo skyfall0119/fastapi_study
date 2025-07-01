@@ -16,5 +16,6 @@ services:
   redis:
     image: redis:7
     container_name: wait_queue_redis
+    # command: ["redis-server", "--notify-keyspace-events", "Ex"]
     ports:
       - "6379:6379"

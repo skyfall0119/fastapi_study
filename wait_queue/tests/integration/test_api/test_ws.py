@@ -1,23 +1,39 @@
 from fastapi.testclient import TestClient
 from main import app
+import pytest
+import asyncio
+import websockets
+import json
 
+TOKEN_URL = "http://localhost:8000/token"
+WS_URL = "ws://localhost:8000/ws"  
+NUM_CLIENT = 5
 
-def test_websocket_attach_and_receive():
-    client = TestClient(app)
+@pytest.mark.asyncio
+async def test_multiple_websocket_clients():
+    async def connect_and_listen(uuid):
+        async with websockets.connect(WS_URL) as ws:
+            await ws.send(json.dumps({
+                "uuid": uuid,
+            }))
+            msg = await ws.recv()
+            msg_data = json.loads(msg)
+            assert isinstance(msg_data["position"], int)
+            return msg_data["position"]
 
-    # 먼저 토큰을 생성
-    token_response = client.post("/token")
-    assert token_response.status_code == 200
-    token_data = token_response.json()
+    # uuid 받기. (테스트 유저 수만큼)
+    import httpx
+    tokens = []
+    async with httpx.AsyncClient() as client:
+        for _ in range(NUM_CLIENT):
+            resp = await client.post(TOKEN_URL)
+            assert resp.status_code == 200
+            tokens.append(resp.json()["uuid"])
 
-    with client.websocket_connect("/ws") as websocket:
-        # 토큰 전송
-        websocket.send_json({
-            "uuid": token_data["uuid"],
-            "status": token_data["status"]
-        })
+    # WebSocket 병렬 연결
+    results = await asyncio.gather(*[
+        connect_and_listen(uuid) for uuid in tokens
+    ])
 
-        # 서버가 연결 유지할 경우, 클라이언트가 대기 메시지를 수신할 수 있음
-        msg = websocket.receive_json()
-        assert msg["status"] == "wait"
-        assert isinstance(msg["position"], int)
+    print("Queue positions:", results)
+    assert sorted(results) == [1, 2, 3]

@@ -2,6 +2,9 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from service.observer import  get_observer, WaitQueueObserver
 from model.models import TokenResponse
 import json
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/ws")
 
@@ -15,7 +18,6 @@ async def websocket_endpoint(websocket: WebSocket,
         data = await websocket.receive_text()
         # {"uuid": "abcd-1234"}
         parsed = json.loads(data)
-        # TODO: status 제거
         token = TokenResponse(**parsed)
         
         # 웹소켓 추가
@@ -25,9 +27,11 @@ async def websocket_endpoint(websocket: WebSocket,
         # 웹소켓 연결 유지
         while True:
             client_msg = await websocket.receive_text()
+            logger.info(f"ws msg: {client_msg}")
             print(client_msg)
         
     except WebSocketDisconnect:
+        logger.info(f"ws disconnected {token.uuid}")
         await observer.detach(token.uuid)
     
 

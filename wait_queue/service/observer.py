@@ -5,6 +5,10 @@ from utils import config
 from model.models import TokenResponse
 from repository.redis_repo import RedisRepo
 import asyncio
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 WAIT = config.TOKEN_WAIT
 ACTIVE = config.TOKEN_ACTIVE
@@ -14,21 +18,24 @@ class WaitQueueObserver:
     def __init__(self, redis:Redis):
         self.db_service = DbService(redis)
         self.ws_dict = {}  # 소켓 목록 "token_uuid": websocket
+        logger.info("Observer: init.")
 
         
     # 웹소켓 딕셔너리에 추가
     # ***** 사용자 웹소켓을 받았을 때, 토큰으로 redis 대기열에 있는지 검증하고 저장. 
     async def attach(self, token:TokenResponse, ws:WebSocket)->bool:
-    
+        logger.info("Observer: attach websocket")
         # 대기열에 존재하는지 검증
         is_valid = await self.db_service.wait_queue.validate(token)
         if is_valid:
+            logger.info(f"Obsserver: websocket received {token.uuid}")
             await ws.accept()
             self.ws_dict[token.uuid] = ws
             return True
         else:
+            logger.info("Observer: websocket is not valid")
             await ws.close(code=4001)  # Invalid token
-        return False
+            return False
     
     # 대기열 큐에서 유저 제거. ## 웹소켓 연결 끊김 확인시
     async def detach(self, token_uuid:str):
@@ -48,7 +55,7 @@ class WaitQueueObserver:
             for _ in range(available_slots):
                 await self._promote_and_notify()
 
-            await asyncio.sleep(config.WAIT_NOTIFY_INTERVAL)  # 1~2초 간격 추천
+            await asyncio.sleep(config.WAIT_NOTIFY_INTERVAL)  # 1~2초 간격
     
 
     # 웹소켓으로 대기열 -> active 상태변경 알려주기

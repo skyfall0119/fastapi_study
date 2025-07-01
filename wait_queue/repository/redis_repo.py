@@ -16,8 +16,10 @@ class RedisRepo:
                     max_connections=10
                 )
                 ## TTL 만료 이벤트 설정
-                await cls._instance.config_set("notify-keyspace-events", "Ex")
-
+                # await cls._instance.config_set("notify-keyspace-events", "Ex")
+                result = await cls._instance.config_set("notify-keyspace-events", "Ex")
+                current = await cls._instance.config_get("notify-keyspace-events")
+                print("notify-keyspace-events set result:", result, "current value:", current)
             except (ConnectionError, RedisError) as e:
                 raise RuntimeError(f"Redis 초기화 실패 {e}") from e
         return cls._instance
