@@ -26,7 +26,7 @@ class FIFOQueue:
     ## 대기열 추가
     async def insert(self, token: TokenResponse) -> None:
         token_key = self.token_prefix + token.uuid 
-        logger.info(f"waitqueue: insert {token_key}")
+        logger.info(f"{token_key}")
         await self.redis.rpush(self.queue_key, token.uuid)
         await self.redis.set(token_key, token.status)
         
@@ -36,11 +36,11 @@ class FIFOQueue:
         try:
             uuid = await self.redis.lpop(self.queue_key)
             if uuid:
-                logger.info(f"waitqueue: pop {uuid}. active")
+                logger.info(f"{uuid}. status to active")
                 return TokenResponse(uuid=uuid, status=ACTIVE)
             return None
         except Exception as e:
-            logger.error(f"waitqueue: pop error {e}")
+            logger.error(f"error {e}")
     
     # 대기열 리스트 반환
     async def get_all_waiting(self) -> list[str]:
@@ -98,7 +98,6 @@ class ActiveList:
         self.token_prefix = config.TOKEN_PREFIX
         self.ttl = config.TTL_EXPIRE
         self.active_count_key = config.ACTIVE_COUNT_KEY
-        logger.info("activelist: init")
     
     # 유저 추가
     async def add_to_active(self, token: TokenResponse) -> None:
@@ -111,21 +110,21 @@ class ActiveList:
         # set key expiration
         await self.redis.expire(token_key, self.ttl) 
 
-        logger.info(f"activelist: set token : {token_key}")
+        logger.info(f"set token active, TTL: {token_key}")
         
         # 변수 업데이트
         await self.redis.incr(self.active_count_key)
-        logger.info(f"activelist: update active_count : {self.active_count_key}")
+        logger.info(f"increment active_count")
 
     # 유저 제거 (토큰 만료시 이 함수를 부르면 될듯)
     async def remove(self, token_uuid:str) -> None:
-        logger.info(f"activelist: remove {token_uuid}")
+        logger.info(f"{token_uuid}")
         try:
             # if await self.exists(token_uuid=token_uuid):
             await self.redis.srem(self.set_key, token_uuid) #삭제
             await self.redis.decr(self.active_count_key) # -1
         except Exception as e:
-            logger.error(f"activelist: error remove {e}")
+            logger.error(f"error {e}")
             
     # 사용자 uuid 있는지 검사
     async def exists(self, token_uuid: str) -> bool:
@@ -140,7 +139,7 @@ class ActiveList:
             token_exists = await self.redis.exists(token_key)
             return token_exists == 1
         except Exception as e:
-            logger.error(f"activelist: error exists {e}")
+            logger.error(f"error {e}")
             return False
 
     # 현재 사용자수 리턴
@@ -171,7 +170,7 @@ class DbService:
         # websocket 추가
         return token
     
-    # 대기열에서 사용자리스트로
+    # 대기열 pop. 사용자리스트로 push
     async def promote_to_active(self)->TokenResponse:
         token = await self.wait_queue.pop()
         if token:

@@ -18,28 +18,27 @@ class WaitQueueObserver:
     def __init__(self, redis:Redis):
         self.db_service = DbService(redis)
         self.ws_dict = {}  # 소켓 목록 "token_uuid": websocket
-        logger.info("Observer: init.")
 
         
     # 웹소켓 딕셔너리에 추가
     # ***** 사용자 웹소켓을 받았을 때, 토큰으로 redis 대기열에 있는지 검증하고 저장. 
     async def attach(self, token:TokenResponse, ws:WebSocket)->bool:
-        logger.info("Observer: attach websocket")
         # 대기열에 존재하는지 검증
         is_valid = await self.db_service.wait_queue.validate(token)
         if is_valid:
-            logger.info(f"Obsserver: websocket received {token.uuid}")
+            logger.info(f"websocket received {token.uuid}")
             await ws.accept()
             self.ws_dict[token.uuid] = ws
             return True
         else:
-            logger.info("Observer: websocket is not valid")
+            logger.warning("websocket is not valid. closing")
             await ws.close(code=4001)  # Invalid token
             return False
     
     # 대기열 큐에서 유저 제거. ## 웹소켓 연결 끊김 확인시
     async def detach(self, token_uuid:str):
         if token_uuid in self.ws_dict:
+            logger.warning(f"{token_uuid}")
             del self.ws_dict[token_uuid]
         
     
@@ -61,7 +60,7 @@ class WaitQueueObserver:
     # 웹소켓으로 대기열 -> active 상태변경 알려주기
     async def _promote_and_notify(self)->TokenResponse:
         token = await self.db_service.promote_to_active()
-    
+        
         if token:
             if token.uuid in self.ws_dict:
                 ws = self.ws_dict.get(token.uuid)
