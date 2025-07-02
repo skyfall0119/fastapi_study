@@ -13,6 +13,7 @@ async def lifespan(app: FastAPI):
     wait_observer = await get_observer()
     active_monitor = await get_monitor()
     asyncio.create_task(active_monitor.validate_active_count())
+    asyncio.create_task(active_monitor.watch_key_expiration())
     asyncio.create_task(wait_observer.notify_loop())
     
     yield
