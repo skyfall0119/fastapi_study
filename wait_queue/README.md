@@ -35,7 +35,7 @@
    ```http
    POST /token/
    ```
-   - 응답: `{ "uuid": "..." }`
+   - 응답: `{ "uuid": "...", "status": "wait" }`
 
 5. **WebSocket 연결**
    - 클라이언트에서 `/ws/`로 WebSocket 연결 후, 아래와 같이 토큰을 전송:
