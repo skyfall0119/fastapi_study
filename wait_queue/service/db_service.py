@@ -158,17 +158,15 @@ class DbService:
         self.wait_queue = FIFOQueue(redis) ## 대기열 큐 갈아끼우기 편하게
         self.active_set = ActiveList(redis)
         self.max_user = config.MAX_ACTIVE_SET
-        self.test_usr_num = 0
 
 
     # 토큰 생성 / db에 추가, 사용자에게 반환
     async def create_token(self) -> TokenResponse:
         token = TokenResponse(
-            # uuid=str(uuid.uuid4()),
-            uuid=f"test-user-{self.test_usr_num}",
+            uuid=str(uuid.uuid4()),
+            # uuid=f"test-user-{self.test_usr_num}",
             status=WAIT
         )
-        self.test_usr_num+=1
         await self.wait_queue.insert(token)
         # websocket 추가
         return token
