@@ -3,25 +3,30 @@ from service.observer import  get_observer, WaitQueueObserver
 from model.models import TokenResponse
 import json
 from utils.logger import get_logger
+from utils import config
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/ws")
 
-@router.websocket("/")
+@router.websocket("")
 async def websocket_endpoint(websocket: WebSocket,
                         observer:WaitQueueObserver = Depends(get_observer)
                         ):
-    await websocket.accept()
     
     try:
+        await websocket.accept()
         data = await websocket.receive_text()
         # {"uuid": "abcd-1234"}
         parsed = json.loads(data)
-        token = TokenResponse(**parsed)
+        
+        token = TokenResponse(uuid=parsed['uuid'],
+                              status=config.TOKEN_WAIT)
         
         # 웹소켓 추가
-        if not await observer.attach(token, websocket):
+        attch = await observer.attach(token, websocket)
+        logger.info(attch)
+        if not attch:
             return
         
         # 웹소켓 연결 유지

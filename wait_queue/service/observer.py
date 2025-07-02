@@ -51,8 +51,11 @@ class WaitQueueObserver:
             available_slots = await self._is_there_active_room()
             
             # 3. 그 수만큼 프로모트
+            logger.info(f"available slot? {available_slots}")
             for _ in range(available_slots):
-                await self._promote_and_notify()
+                res = await self._promote_and_notify()
+                if res is None:
+                    break
 
             await asyncio.sleep(config.WAIT_NOTIFY_INTERVAL)  # 1~2초 간격
     
@@ -60,7 +63,7 @@ class WaitQueueObserver:
     # 웹소켓으로 대기열 -> active 상태변경 알려주기
     async def _promote_and_notify(self)->TokenResponse:
         token = await self.db_service.promote_to_active()
-        
+        logger.info(f"{token}")
         if token:
             if token.uuid in self.ws_dict:
                 ws = self.ws_dict.get(token.uuid)
@@ -74,6 +77,7 @@ class WaitQueueObserver:
     # 대기순번 날려주기
     async def _notify_wait_number(self)->None:
         wait_list = await self.db_service.wait_queue.get_all_waiting()
+        logger.info(f"current wait list {wait_list}")
         for i, id in enumerate(wait_list):
             ws = self.ws_dict.get(id)
             if ws:
@@ -89,6 +93,7 @@ class WaitQueueObserver:
     # 입장가능 확인
     async def _is_there_active_room(self) -> int:
         count = await self.db_service.active_set.count()
+        logger.info(f"current {count} < max active {config.MAX_ACTIVE_SET}")
         if count < config.MAX_ACTIVE_SET:
             return config.MAX_ACTIVE_SET - count
         else:

@@ -51,6 +51,7 @@ class FIFOQueue:
     async def validate(self, token: TokenResponse) -> bool:
         token_key = self.token_prefix + token.uuid
         stored_status = await self.redis.get(token_key)
+        logger.info(f"{stored_status} is not None, {token.status}")
         return stored_status is not None and stored_status == token.status
         
 
