@@ -20,8 +20,7 @@ async def websocket_endpoint(websocket: WebSocket,
         # {"uuid": "abcd-1234"}
         parsed = json.loads(data)
         
-        token = TokenResponse(uuid=parsed['uuid'],
-                              status=config.TOKEN_WAIT)
+        token = TokenResponse(**parsed)
         
         # 웹소켓 추가
         attch = await observer.attach(token, websocket)

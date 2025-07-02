@@ -1,9 +1,8 @@
-from fastapi.testclient import TestClient
-from main import app
 import pytest
 import asyncio
 import websockets
 import json
+from utils import config
 
 TOKEN_URL = "http://localhost:8000/token"
 WS_URL = "ws://localhost:8000/ws"  
@@ -15,6 +14,7 @@ async def test_multiple_websocket_clients():
         async with websockets.connect(WS_URL) as ws:
             await ws.send(json.dumps({
                 "uuid": uuid,
+                "status" : config.TOKEN_WAIT
             }))
             msg = await ws.recv()
             msg_data = json.loads(msg)
