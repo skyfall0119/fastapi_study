@@ -5,7 +5,7 @@ from repository.redis_repo import RedisRepo
 
 router = APIRouter(prefix="/token")
 
-@router.post("", response_model=TokenResponse)
+@router.post("/", response_model=TokenResponse)
 async def generate_token():
     redis = await RedisRepo.get_instance()
     db_service = DbService(redis)

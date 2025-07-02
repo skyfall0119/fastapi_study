@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/ws")
 
-@router.websocket("")
+@router.websocket("/")
 async def websocket_endpoint(websocket: WebSocket,
                         observer:WaitQueueObserver = Depends(get_observer)
                         ):

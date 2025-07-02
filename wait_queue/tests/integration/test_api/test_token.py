@@ -23,16 +23,16 @@
 
 
 
-# import pytest
-# from httpx import AsyncClient
+import pytest
+from httpx import AsyncClient
 
-# @pytest.mark.asyncio
-# async def test_generate_token():
-#     async with AsyncClient(base_url="http://localhost:8000") as client:
-#         response = await client.post("/token")
-#         assert response.status_code == 200
+@pytest.mark.asyncio
+async def test_generate_token():
+    async with AsyncClient(base_url="http://localhost:8000") as client:
+        response = await client.post("/token")
+        assert response.status_code == 200
 
-#         data = response.json()
-#         assert "uuid" in data
-#         assert "status" in data
-#         assert data["status"] == "wait"
+        data = response.json()
+        assert "uuid" in data
+        assert "status" in data
+        assert data["status"] == "wait"
