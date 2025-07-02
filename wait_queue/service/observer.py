@@ -27,7 +27,6 @@ class WaitQueueObserver:
         is_valid = await self.db_service.wait_queue.validate(token)
         if is_valid:
             logger.info(f"websocket received {token.uuid}")
-            await ws.accept()
             self.ws_dict[token.uuid] = ws
             return True
         else:

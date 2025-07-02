@@ -7,7 +7,7 @@ import json
 
 TOKEN_URL = "http://localhost:8000/token"
 WS_URL = "ws://localhost:8000/ws"  
-NUM_CLIENT = 5
+NUM_CLIENT = 6
 
 @pytest.mark.asyncio
 async def test_multiple_websocket_clients():
@@ -36,4 +36,5 @@ async def test_multiple_websocket_clients():
     ])
 
     print("Queue positions:", results)
-    assert sorted(results) == [1, 2, 3]
+    ans = [i for i in range(1, NUM_CLIENT+1)]
+    assert sorted(results) == ans
