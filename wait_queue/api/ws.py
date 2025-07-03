@@ -35,7 +35,7 @@ async def websocket_endpoint(websocket: WebSocket,
             print(client_msg)
         
     except WebSocketDisconnect:
-        logger.info(f"ws disconnected {token.uuid}")
+        logger.warning(f"ws disconnected {token.uuid}")
         await observer.detach(token.uuid)
     
 

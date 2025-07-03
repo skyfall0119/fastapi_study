@@ -74,3 +74,10 @@ services
 pytest => 테스트 라이브러리
 pytest-asyncio 비동기 테스트용
 fakeredis[asyncio] 목레디스
+
+부하테스트
+locust  툴 사용
+- python 기반 부하 테스트 도구
+https://docs.locust.io/en/stable/installation.html
+
+

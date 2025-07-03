@@ -30,14 +30,14 @@ class WaitQueueObserver:
             self.ws_dict[token.uuid] = ws
             return True
         else:
-            logger.warning("websocket is not valid. closing")
+            logger.info("websocket is not valid. closing")
             await ws.close(code=4001)  # Invalid token
             return False
     
     # 대기열 큐에서 유저 제거. ## 웹소켓 연결 끊김 확인시
     async def detach(self, token_uuid:str):
         if token_uuid in self.ws_dict:
-            logger.warning(f"{token_uuid}")
+            logger.info(f"{token_uuid}")
             del self.ws_dict[token_uuid]
         
     

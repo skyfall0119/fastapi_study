@@ -41,4 +41,4 @@ def main():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app")
+    uvicorn.run("main:app", log_level="warning")

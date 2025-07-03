@@ -34,5 +34,6 @@ async def test_multiple_websocket_clients():
     results = await asyncio.gather(*[connect_and_listen(uuid) for uuid in tokens])
 
     print("Queue positions:", results)
-    ans = [i for i in range(1, NUM_CLIENT+1)]
+    ## test_token 함께 테스트 진행시 포지션 +1
+    ans = [i+1 for i in range(1, NUM_CLIENT+1)]
     assert sorted(results) == ans
