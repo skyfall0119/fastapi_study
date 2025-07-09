@@ -1,7 +1,43 @@
+""" limiter decorator 방식
+파라미터가 없는 데코레이터는 
+def my_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print("before")
+        return func(*args, **kwargs)
+    return wrapper
+
+@my_decorator
+def my_func():
+    print("hello") 
+my_func = my_decorator(my_func)
+
+------------------------------------------------------------------
+현재 리미터는 파라미터가 있음. 그럼 인자를 먼저 받아 함수를 리턴하고 그 함수에서 함수를 받는 식으로
+def mydeco_func(args1, args2...):
+    def decorator(func):  # ← 여기가 핵심
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # ...
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
+    
+@sliding_window_limiter(redis, limit=5, window_sec=30)
+async def my_api(...):
+
+decorator = sliding_window_limiter(redis, limit=5)
+my_api = decorator(my_api)
+
+
+
+"""
+
 from fastapi import Request, HTTPException
 import time
 from utils import config
 from redis.asyncio import Redis
+from functools import wraps
 
 
 """
@@ -13,16 +49,46 @@ rate limiting (fixed window)
 
 구현 간단.
 """
-def fixed_rate_limiter(redis_client:Redis, 
+async def rate_limiter_fixed(redis_client:Redis, 
                  uuid: str, 
                  limit:int=config.RATE_LIMIT,
                  window:int=config.RATE_WINDOW):
     key = config.RATE_PREFIX + uuid
-    current = redis_client.incr(key)
+    current = await redis_client.incr(key)
     if current == 1: # 첫 api 콜이면 만료 설정
-        redis_client.expire(key, window)
+        await redis_client.expire(key, window)
     if current > limit: # api 콜이 일정 횟수 넘어가면 exception
         raise HTTPException(status_code=429, detail="Too many requests")
+
+
+
+"""
+rate limiting (fixed window)
+데코레이터로 작성시 특정 엔드포인트에 적용이 간단함.
+구성이 어려움...
+"""
+# def rate_limiter_fixed(redis_client:Redis, 
+#                 #  uuid: str, 이렇게 받으면 데코레이터 생성시 uuid 고정되버림
+                
+#                  limit:int=config.RATE_LIMIT,
+#                  window:int=config.RATE_WINDOW,
+#                  key_func =  lambda token:token
+#                  ):
+#     def decorator(func):
+#         @wraps(func)
+#         async def wrapper(*args, **kwargs):
+#             token = kwargs.get("token", None)
+#             key = config.RATE_PREFIX + key_func(token)
+            
+#             current = await redis_client.incr(key)
+#             if current == 1: # 첫 api 콜이면 만료 설정
+#                 await redis_client.expire(key, window)
+#             if current > limit: # api 콜이 일정 횟수 넘어가면 exception
+#                 raise HTTPException(status_code=429, detail="Too many requests")
+#             return await func(*args, **kwargs)
+#         return wrapper
+#     return decorator
+    
 
 
 
@@ -36,7 +102,7 @@ rate limiting (sliding window)
     -> TTL 만료를 윈도우와 딱 맞게 설정하면 엣지케이스에서 오류 발생 가능
     
 """
-def sliding_window_rate_limiter(redis_client:Redis, 
+def rate_limiter_sliding_window(redis_client:Redis, 
                                 uuid: str, 
                                 limit: int = config.RATE_LIMIT, 
                                 window_sec: int = config.RATE_WINDOW):
@@ -65,7 +131,7 @@ def sliding_window_rate_limiter(redis_client:Redis,
 
 """
 
-def token_bucket_rate_limiter(
+def rate_limiter_token_bucket(
     redis_client:Redis,
     uuid: str,
     refill_rate: float,   # 초당 몇 개 충전

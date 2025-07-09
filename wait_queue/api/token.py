@@ -5,6 +5,7 @@ from repository.redis_repo import RedisRepo
 from utils.logger import get_logger
 
 router = APIRouter(prefix="/token")
+
 logger = get_logger(__name__)
 
 @router.post("/", response_model=TokenResponse)

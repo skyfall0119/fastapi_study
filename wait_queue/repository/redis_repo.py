@@ -25,5 +25,7 @@ class RedisRepo:
         return cls._instance
     
     
+async def get_redis():
+    return await RedisRepo.get_instance()
     
     
