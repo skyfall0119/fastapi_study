@@ -67,5 +67,67 @@ wait_queue/
     main.py
 ```
 
-## 참고
+#### 참고
 - Redis의 keyspace notification(`notify-keyspace-events Ex`)을 사용하므로, Redis 설정 필요
+
+
+
+## 추가기능: rate limiter 구현
+
+api 콜 제한 알고리즘 
+- fixed_window
+- sliding window
+- token bucket
+
+tests\integration\test_limiter.py   
+fixed_window 테스트 내용  
+- rate limit: 5 회 / 10초  
+- 테스트 인원: 3명  
+- 시나리오: 
+   - 5회 허용 200
+   - 6번째 거부 429
+   - 윈도우 10초 대기 
+   - 재허용 200
+테스트 결과  
+
+<details>
+<summary>상세 로그</summary>
+
+```
+338436b4-01ad-4ce3-83e3-74e537ccb628
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [429 Too Many Requests]>
+sleeping for window length 10
+after window
+<Response [200 OK]>
+
+
+543903c4-4823-4381-a36a-28411ca394d7
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [429 Too Many Requests]>
+sleeping for window length 10
+after window
+<Response [200 OK]>
+
+
+6a11a54e-eaf3-4fbf-8d67-64cbd98bac38
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [200 OK]>
+<Response [429 Too Many Requests]>
+sleeping for window length 10
+after window
+<Response [200 OK]>
+```
+
+</details>
