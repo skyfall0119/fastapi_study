@@ -3,8 +3,7 @@ import uuid
 import time
 from redis.asyncio import Redis
 from model.models import TokenResponse
-from repository.redis_repo import RedisRepo 
-from utils import config
+from utils import config, util
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -162,11 +161,13 @@ class DbService:
 
     # 토큰 생성 / db에 추가, 사용자에게 반환
     async def create_token(self) -> TokenResponse:
+        # token = util.create_access_token()
         token = TokenResponse(
             uuid=str(uuid.uuid4()),
             # uuid=f"test-user-{self.test_usr_num}",
             status=WAIT
         )
+        
         await self.wait_queue.insert(token)
         # websocket 추가
         return token

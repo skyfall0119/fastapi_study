@@ -1,11 +1,11 @@
 from locust import HttpUser, task, between
 import json
 import websocket
-import threading
-import time
+from utils import config
 
 class WaitQueueUser(HttpUser):
     wait_time = between(1, 2)
+    LIMITED_URL = "/limited/"
 
     @task
     def websocket_queue(self):
@@ -29,15 +29,26 @@ class WaitQueueUser(HttpUser):
         try:
             ws.connect(ws_url)
             ws.send(json.dumps(token))
+            token = None
             while True:
                 try:
                     msg = ws.recv()
                     # print(f"[Locust] Received: {msg}")
+                    if "uuid" in msg:
+                        token = msg['uuid']
                 except websocket.WebSocketConnectionClosedException:
                     print("[Locust] WebSocket closed by server (TTL 만료 등)")
                     break
                 except Exception as e:
                     print(f"[Locust] WebSocket error: {e}")
                     break
+            
+            if token:
+                try:
+                    for _ in range(config.RATE_LIMIT+1):
+                        resp = self.client.get("/limited/", params={"token":token})
+                except Exception as e:
+                    print(f"[Locust] error calling limited {e}")
+            
         finally:
             ws.close()
