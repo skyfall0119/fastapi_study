@@ -32,21 +32,6 @@ def main():
 
 
 
-## rate limiting 데코레이터 테스트.
-## 미구현
-# @app.get("/limited/")
-# @rate_limiter_fixed(redis_client= Depends(get_redis), 
-#                     limit=3, 
-#                     window=10,
-#                     key_func= lambda token: token  # Use token(uuid) as limiter key
-#                     )
-# async def limited_endpoint(token:str):
-
-
-#     return {"msg": "ok"}
-
-
-
 
 if __name__ == "__main__":
     import uvicorn
