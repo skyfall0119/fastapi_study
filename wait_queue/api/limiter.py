@@ -33,11 +33,38 @@ my_api = decorator(my_api)
 
 """
 
-from fastapi import Request, HTTPException
+from fastapi import Request, HTTPException, APIRouter, Depends
+from repository.redis_repo import get_redis, Redis
 import time
 from utils import config
+from utils.util import create_access_token, verify_access_token
 from redis.asyncio import Redis
 from functools import wraps
+
+
+router = APIRouter(prefix="/limited")
+
+
+
+## rate limiting 테스트
+@router.get("/")
+async def limited_endpoint(token:str, redis:Redis =Depends(get_redis)):
+    await rate_limiter_fixed(redis_client=redis,
+                             uuid=token)
+
+    return {"msg": "ok"}
+
+
+
+## rate limiting 테스트
+@router.get("/jwt/")
+async def limited_jwt(token:dict = Depends(verify_access_token), 
+                      redis:Redis =Depends(get_redis)):
+    
+    await rate_limiter_fixed(redis_client=redis,
+                             uuid=token['uuid'])
+
+    return {"msg": "ok"}
 
 
 """
@@ -88,7 +115,23 @@ rate limiting (fixed window)
 #             return await func(*args, **kwargs)
 #         return wrapper
 #     return decorator
-    
+
+
+
+## rate limiting 데코레이터 테스트.
+## 미구현
+# @app.get("/limited/")
+# @rate_limiter_fixed(redis_client= Depends(get_redis), 
+#                     limit=3, 
+#                     window=10,
+#                     key_func= lambda token: token  # Use token(uuid) as limiter key
+#                     )
+# async def limited_endpoint(token:str):
+
+
+#     return {"msg": "ok"}
+
+
 
 
 
