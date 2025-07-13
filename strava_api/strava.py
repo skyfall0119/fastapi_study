@@ -45,7 +45,7 @@ def get_activities(access_token: str):
 def get_activity_streams(access_token: str, id):
     headers = {"Authorization": f"Bearer {access_token}"}
     params = {
-        "keys": "heartrate,watts,cadence,distance,velocity_smooth",
+        "keys": "heartrate,watts,cadence,distance,velocity_smooth,time",
         "key_by_type": "true"
     }
     url = API_URL + f"activities/{id}/streams"
@@ -55,6 +55,7 @@ def get_activity_streams(access_token: str, id):
 
 
 # stream set
+# time
 # TimeStream	An instance of TimeStream.
 # distance
 # DistanceStream	An instance of DistanceStream.
