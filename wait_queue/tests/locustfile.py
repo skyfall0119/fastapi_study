@@ -2,6 +2,7 @@ from locust import HttpUser, task, between
 import json
 import websocket
 from utils import config
+import time
 
 class WaitQueueUser(HttpUser):
     wait_time = between(1, 2)
@@ -11,7 +12,6 @@ class WaitQueueUser(HttpUser):
     def websocket_queue(self):
         # 1. 토큰 발급
         resp = self.client.post("/token/")
-        # token = resp.json()
         if resp.status_code == 200 and resp.text:
             try:
                 token = resp.json()
@@ -33,22 +33,30 @@ class WaitQueueUser(HttpUser):
             while True:
                 try:
                     msg = ws.recv()
-                    # print(f"[Locust] Received: {msg}")
+                    print(f"[Locust] Received: {msg}")
+                    if not msg.strip():  # 빈 문자열 또는 공백 무시
+                        continue
+                    msg = json.loads(msg)
                     if "uuid" in msg:
                         token = msg['uuid']
                 except websocket.WebSocketConnectionClosedException:
-                    print("[Locust] WebSocket closed by server (TTL 만료 등)")
+                    # print("[Locust] WebSocket closed by server (TTL 만료 등)")
                     break
                 except Exception as e:
-                    print(f"[Locust] WebSocket error: {e}")
+                    # print(f"[Locust] WebSocket error: {e}")
                     break
             
             if token:
                 try:
                     for _ in range(config.RATE_LIMIT+1):
                         resp = self.client.get("/limited/", params={"token":token})
+                        print(resp)
+                        if resp.status_code == 429:
+                            print(f"{token}: too many request")
+                            break
                 except Exception as e:
                     print(f"[Locust] error calling limited {e}")
+                time.sleep(10)
             
         finally:
             ws.close()

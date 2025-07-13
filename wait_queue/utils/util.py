@@ -5,7 +5,6 @@ jwt 토큰을 사용해서 사용자 토큰 처리
 
 """
 
-from fastapi import HTTPException
 from datetime import datetime, timedelta, timezone
 import uuid
 from jose import jwt, JWTError
@@ -15,11 +14,13 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-def create_access_token(expires_delta: timedelta = config.TOKEN_EXP):
+def create_access_token(expires_delta: timedelta = config.TOKEN_EXP,
+                        status:str = config.TOKEN_WAIT
+                        ):
     expire = datetime.now(timezone.utc) + expires_delta  
     payload = {
         "uuid": str(uuid.uuid4()),
-        "status": config.TOKEN_WAIT,
+        "status": status,
         "exp": int(expire.timestamp())
     }
     token = jwt.encode(payload, config.JWT_SECRET, algorithm=config.JWT_ALGORITHM)

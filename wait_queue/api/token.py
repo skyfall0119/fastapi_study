@@ -3,6 +3,7 @@ from model.models import TokenResponse
 from service.db_service import DbService
 from repository.redis_repo import RedisRepo
 from utils.logger import get_logger
+from utils.util import create_access_token
 
 router = APIRouter(prefix="/token")
 
@@ -14,6 +15,15 @@ async def generate_token():
         redis = await RedisRepo.get_instance()
         db_service = DbService(redis)
         token = await db_service.create_token()
+        return token
+    except Exception as e:
+        logger.error(f"{e}")
+        
+
+@router.post("/jwt/")
+async def generate_token():
+    try:
+        token = create_access_token()
         return token
     except Exception as e:
         logger.error(f"{e}")

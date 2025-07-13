@@ -37,26 +37,31 @@ from fastapi import Request, HTTPException, APIRouter, Depends
 from repository.redis_repo import get_redis, Redis
 import time
 from utils import config
+from utils.logger import get_logger
 from utils.util import create_access_token, verify_access_token
 from redis.asyncio import Redis
 from functools import wraps
 
 
 router = APIRouter(prefix="/limited")
-
+logger = get_logger(__name__)
 
 
 ## rate limiting 테스트
 @router.get("/")
 async def limited_endpoint(token:str, redis:Redis =Depends(get_redis)):
-    await rate_limiter_fixed(redis_client=redis,
-                             uuid=token)
-
+    try:
+        await rate_limiter_fixed(redis_client=redis,
+                                uuid=token)
+    except HTTPException as e:
+        logger.warning(e)
+        raise e
     return {"msg": "ok"}
 
 
 
 ## rate limiting 테스트
+## 의존성 주입
 @router.get("/jwt/")
 async def limited_jwt(token:dict = Depends(verify_access_token), 
                       redis:Redis =Depends(get_redis)):

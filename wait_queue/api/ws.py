@@ -13,13 +13,11 @@ router = APIRouter(prefix="/ws")
 async def websocket_endpoint(websocket: WebSocket,
                         observer:WaitQueueObserver = Depends(get_observer)
                         ):
-    
+    token = None
     try:
         await websocket.accept()
         data = await websocket.receive_text()
-        # {"uuid": "abcd-1234"}
-        parsed = json.loads(data)
-        
+        parsed = json.loads(data)        
         token = TokenResponse(**parsed)
         
         # 웹소켓 추가
@@ -35,8 +33,9 @@ async def websocket_endpoint(websocket: WebSocket,
             print(client_msg)
         
     except WebSocketDisconnect:
-        logger.warning(f"ws disconnected {token.uuid}")
-        await observer.detach(token.uuid)
+        # logger.warning(f"ws disconnected {token.uuid}")
+        if token:
+            await observer.detach(token.uuid)
     
 
 
