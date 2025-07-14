@@ -4,4 +4,4 @@ from enum import Enum
 class TokenResponse(BaseModel):
     uuid: str
     status: str 
-    exp:int = 0
+    exp:int = 100000

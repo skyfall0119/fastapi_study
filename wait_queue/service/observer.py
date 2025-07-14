@@ -1,7 +1,7 @@
 from redis.asyncio import Redis
 from service.db_service import DbService
 from fastapi import WebSocket
-from utils import config
+from utils import config, util
 from model.models import TokenResponse
 from repository.redis_repo import get_redis_sync
 import asyncio
@@ -66,8 +66,11 @@ class WaitQueueObserver:
         if token:
             if token.uuid in self.ws_dict:
                 ws = self.ws_dict.get(token.uuid)
-                token.status = ACTIVE
-                await ws.send_json(token.model_dump())
+                
+                encoded = util.upgrade_access_token_active(token)
+                
+                
+                await ws.send_json({"access_token":encoded})
                 await ws.close()
                 del self.ws_dict[token.uuid]
         return token

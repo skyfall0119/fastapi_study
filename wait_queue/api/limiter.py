@@ -49,10 +49,11 @@ logger = get_logger(__name__)
 
 ## rate limiting 테스트
 @router.get("/")
-async def limited_endpoint(token:str, redis:Redis =Depends(get_redis_sync)):
+async def limited_endpoint(token:str = Depends(verify_access_token), 
+                           redis:Redis =Depends(get_redis_sync)):
     try:
         await rate_limiter_fixed(redis_client=redis,
-                                uuid=token)
+                                uuid=token['uuid'])
     except HTTPException as e:
         logger.warning(e)
         raise e
@@ -101,27 +102,27 @@ rate limiting (fixed window)
 fastapi-limiter 라이브러리
 slowapi
 """
-def rate_limiter_fixed(redis_client:Redis, 
-                #  uuid: str, 이렇게 받으면 데코레이터 생성시 uuid 고정되버림
+# def rate_limiter_fixed(redis_client:Redis, 
+#                 #  uuid: str, 이렇게 받으면 데코레이터 생성시 uuid 고정되버림
                 
-                 limit:int=config.RATE_LIMIT,
-                 window:int=config.RATE_WINDOW,
-                 key_func =  lambda token:token
-                 ):
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            token = kwargs.get("token", None)
-            key = config.RATE_PREFIX + key_func(token)
+#                  limit:int=config.RATE_LIMIT,
+#                  window:int=config.RATE_WINDOW,
+#                  key_func =  lambda token:token
+#                  ):
+#     def decorator(func):
+#         @wraps(func)
+#         async def wrapper(*args, **kwargs):
+#             token = kwargs.get("token", None)
+#             key = config.RATE_PREFIX + key_func(token)
             
-            current = await redis_client.incr(key)
-            if current == 1: # 첫 api 콜이면 만료 설정
-                await redis_client.expire(key, window)
-            if current > limit: # api 콜이 일정 횟수 넘어가면 exception
-                raise HTTPException(status_code=429, detail="Too many requests")
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
+#             current = await redis_client.incr(key)
+#             if current == 1: # 첫 api 콜이면 만료 설정
+#                 await redis_client.expire(key, window)
+#             if current > limit: # api 콜이 일정 횟수 넘어가면 exception
+#                 raise HTTPException(status_code=429, detail="Too many requests")
+#             return await func(*args, **kwargs)
+#         return wrapper
+#     return decorator
 
 
 

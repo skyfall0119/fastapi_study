@@ -13,18 +13,20 @@ NUM_CLIENT = 3  # match the rate limit for easier test
 
 @pytest.mark.asyncio
 async def test_rate_limiter_fixed():
-    async def connect_and_listen(uuid):
+    async def connect_and_listen(jwt_token):
         async with websockets.connect(WS_URL) as ws:
-            await ws.send(json.dumps({
-                "uuid": uuid,
-                "status": config.TOKEN_WAIT
-            }))
+            await ws.send(json.dumps(jwt_token))
             # Wait for promotion to active
             while True:
                 msg = await ws.recv()
                 msg_data = json.loads(msg)
-                if msg_data.get("status") == config.TOKEN_ACTIVE:
-                    return msg_data  ## active token!!
+                print(msg_data)
+                ## skip wait position data
+                if "access_token" in msg_data:
+                    # return msg_data['access_token']
+                    return msg_data
+                # if jwt_token.get("status") == config.TOKEN_ACTIVE:
+                #     return msg_data  ## active token!!
     
     tokens = []
     async with httpx.AsyncClient() as client:
@@ -35,25 +37,26 @@ async def test_rate_limiter_fixed():
             tokens.append(resp.json())
 
         # 2. 대기열에서 active 될 때까지 기다림
-        active_tokens = await asyncio.gather(*[connect_and_listen(tk['uuid']) for tk in tokens])
+        active_tokens = await asyncio.gather(*[connect_and_listen(tk) for tk in tokens])
 
         # 3. active 된 토큰으로 /limited 호출 (rate limit 3회 허용)
-        # 이 예제에서는 간단하게 uuid 만 보내서 검증
-        # 추후 프로젝트에서는 jwt 로
         for token in active_tokens:
-            print(f"\n\n{token['uuid']}")
+            print(f"\n\ntoken: {token} {type(token)}")
+            tk = token['access_token']
             for _ in range(config.RATE_LIMIT):
-                resp = await client.get(LIMITED_URL, params={"token": token['uuid']})
+                resp = await client.get(LIMITED_URL, params={"token": tk})
                 print(f"{resp}")
                 assert resp.status_code == 200
                 assert resp.json()["msg"] == "ok"
-            # 리밋 후 한번 더 콜하면 out
-            resp = await client.get(LIMITED_URL, params={"token": token['uuid']})
+                
+            # 최대 리밋 후 한번 더 콜하면 out
+            resp = await client.get(LIMITED_URL, params={"token": tk})
             print(f"{resp}")
             assert resp.status_code == 429
             print(f"sleeping for window length {config.RATE_WINDOW}")
             await asyncio.sleep(config.RATE_WINDOW+1)
+            
             # 윈도우만큼 기다렸다 다시 콜.
             print(f"after window")
-            resp = await client.get(LIMITED_URL, params={"token": token['uuid']})
+            resp = await client.get(LIMITED_URL, params={"token": tk})
             print(f"{resp}")
