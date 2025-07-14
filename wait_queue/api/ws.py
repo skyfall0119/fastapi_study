@@ -3,7 +3,7 @@ from service.observer import  get_observer, WaitQueueObserver
 from model.models import TokenResponse
 import json
 from utils.logger import get_logger
-from utils import config
+from utils import config, util
 
 logger = get_logger(__name__)
 
@@ -17,11 +17,10 @@ async def websocket_endpoint(websocket: WebSocket,
     try:
         await websocket.accept()
         data = await websocket.receive_text()
-        parsed = json.loads(data)        
-        token = TokenResponse(**parsed)
-        
+        token = json.loads(data)['access_token']
+        token_decoded = TokenResponse(**util.verify_access_token(token))
         # 웹소켓 추가
-        attch = await observer.attach(token, websocket)
+        attch = await observer.attach(token_decoded, websocket)
         logger.info(attch)
         if not attch:
             return
@@ -33,16 +32,6 @@ async def websocket_endpoint(websocket: WebSocket,
             print(client_msg)
         
     except WebSocketDisconnect:
-        # logger.warning(f"ws disconnected {token.uuid}")
         if token:
-            await observer.detach(token.uuid)
+            await observer.detach(token_decoded.uuid)
     
-
-
-
-# ## Option 2 : polling 기반 대기순번 받기
-# @router.get("/wait")
-# async def wait_position(token: str,
-#                         observer:WaitQueueObserver = Depends(get_observer)
-#                         ):
-#     ...

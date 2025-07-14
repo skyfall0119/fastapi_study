@@ -11,7 +11,7 @@ async def test_fifo_insert_and_pop(fake_redis):
 
     ## insert 확인
     token = TokenResponse(uuid=str(uuid.uuid4()), status="wait")
-    await queue.insert(token)
+    await queue.insert(token.uuid)
 
     # Redis 리스트 확인
     items = await fake_redis.lrange(config.WAIT_QUEUE_KEY, 0, -1)
@@ -31,7 +31,7 @@ async def test_fifo_validate(fake_redis):
     queue = FIFOQueue(fake_redis)
 
     token = TokenResponse(uuid=str(uuid.uuid4()), status="wait")
-    await queue.insert(token)
+    await queue.insert(token.uuid)
 
     is_valid = await queue.validate(token)
     assert is_valid is True

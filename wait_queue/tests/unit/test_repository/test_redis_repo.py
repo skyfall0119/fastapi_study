@@ -1,12 +1,13 @@
 import pytest
 from redis.exceptions import RedisError, ConnectionError
-from repository.redis_repo import RedisRepo
+import repository.redis_repo as redis_repo
 
 @pytest.mark.asyncio
 async def test_redis_instance_connection():
     try:
-        redis1 = await RedisRepo.get_instance()
-        redis2 = await RedisRepo.get_instance()
+        await redis_repo.init_redis()
+        redis1 = redis_repo.get_redis_sync()
+        redis2 = redis_repo.get_redis_sync()
 
         # 싱글톤 검증
         assert redis1 is redis2

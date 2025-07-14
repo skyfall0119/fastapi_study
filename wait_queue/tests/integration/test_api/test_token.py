@@ -34,23 +34,13 @@ async def test_generate_token():
         assert response.status_code == 200
 
         data = response.json()
-        assert "uuid" in data
-        assert "status" in data
-        assert data["status"] == "wait"
-        
-        
-@pytest.mark.asyncio
-async def test_jwt_token():
-    async with AsyncClient(base_url="http://localhost:8000") as client:
-        response = await client.post("/token/jwt/")
-        assert response.status_code == 200
-        
-        tk = response.json()
-        data = verify_access_token(tk)
-        print(tk)
-        # {'uuid': 'c8cc0ea5-9b53-4f2b-aff3-863385ec9625', 'status': 'wait', 'exp': 1752990343}
-        assert "uuid" in data
-        assert "exp" in data
-        assert "status" in data
-        assert data["status"] == "wait"
 
+        assert "access_token" in data
+        ## decode jwt token
+        decoded = verify_access_token(data['access_token'])
+        print(decoded)
+        assert "uuid" in decoded
+        assert "status" in decoded
+        assert "exp" in decoded
+        assert decoded["status"] == "wait"
+        

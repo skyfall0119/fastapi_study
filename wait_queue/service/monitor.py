@@ -2,9 +2,8 @@ from redis.asyncio import Redis
 from utils import config
 import asyncio
 from service.db_service import ActiveList
-from repository.redis_repo import RedisRepo
+from repository.redis_repo import get_redis_sync
 from utils.logger import get_logger
-import inspect
 
 logger = get_logger(__name__)
 
@@ -83,7 +82,7 @@ active_monitor:TokenMonitor = None
 async def get_monitor()->TokenMonitor:
     global active_monitor
     if active_monitor is None:
-        redis = await RedisRepo.get_instance()
+        redis = get_redis_sync()
         active_monitor = TokenMonitor(redis)
 
     return active_monitor

@@ -22,12 +22,12 @@ class FIFOQueue:
         self.token_prefix = config.TOKEN_PREFIX
         self.token_ttl = config.TTL_EXPIRE
         
-    ## 대기열 추가
-    async def insert(self, token: TokenResponse) -> None:
-        token_key = self.token_prefix + token.uuid 
+    ## 대기열 추가 ## user uuid 
+    async def insert(self, user_id: str) -> None:
+        token_key = self.token_prefix + user_id
         logger.info(f"{token_key}")
-        await self.redis.rpush(self.queue_key, token.uuid)
-        await self.redis.set(token_key, token.status)
+        await self.redis.rpush(self.queue_key, user_id)
+        await self.redis.set(token_key, config.TOKEN_WAIT)
         
         
     ## 대기열 pop 
@@ -160,16 +160,11 @@ class DbService:
 
 
     # 토큰 생성 / db에 추가, 사용자에게 반환
-    async def create_token(self) -> TokenResponse:
-        # token = util.create_access_token()
-        token = TokenResponse(
-            uuid=str(uuid.uuid4()),
-            # uuid=f"test-user-{self.test_usr_num}",
-            status=WAIT
-        )
-        
-        await self.wait_queue.insert(token)
-        # websocket 추가
+    async def create_token(self) -> str:
+
+        token, user_uuid = util.create_access_token()
+        await self.wait_queue.insert(user_uuid)
+
         return token
     
     # 대기열 pop. 사용자리스트로 push

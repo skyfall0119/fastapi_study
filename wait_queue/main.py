@@ -4,12 +4,13 @@ from contextlib import asynccontextmanager
 
 from service.observer import get_observer
 from service.monitor import get_monitor
+from repository.redis_repo import init_redis
 from api import routers
-from api.limiter import rate_limiter_fixed
 
 #서버 시작시 실행
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await init_redis()
     wait_observer = await get_observer()
     active_monitor = await get_monitor()
     asyncio.create_task(active_monitor.validate_active_count())

@@ -3,7 +3,7 @@ from service.db_service import DbService
 from fastapi import WebSocket
 from utils import config
 from model.models import TokenResponse
-from repository.redis_repo import RedisRepo
+from repository.redis_repo import get_redis_sync
 import asyncio
 from utils.logger import get_logger
 
@@ -109,6 +109,6 @@ wait_observer:WaitQueueObserver = None
 async def get_observer()->WaitQueueObserver:
     global wait_observer
     if wait_observer is None:
-        redis = await RedisRepo.get_instance()
+        redis = get_redis_sync()
         wait_observer = WaitQueueObserver(redis)
     return wait_observer

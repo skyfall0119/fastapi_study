@@ -34,7 +34,7 @@ my_api = decorator(my_api)
 """
 
 from fastapi import Request, HTTPException, APIRouter, Depends
-from repository.redis_repo import get_redis, Redis
+from repository.redis_repo import get_redis_sync, Redis
 import time
 from utils import config
 from utils.logger import get_logger
@@ -49,7 +49,7 @@ logger = get_logger(__name__)
 
 ## rate limiting 테스트
 @router.get("/")
-async def limited_endpoint(token:str, redis:Redis =Depends(get_redis)):
+async def limited_endpoint(token:str, redis:Redis =Depends(get_redis_sync)):
     try:
         await rate_limiter_fixed(redis_client=redis,
                                 uuid=token)
@@ -63,8 +63,8 @@ async def limited_endpoint(token:str, redis:Redis =Depends(get_redis)):
 ## rate limiting 테스트
 ## 의존성 주입
 @router.get("/jwt/")
-async def limited_jwt(token:dict = Depends(verify_access_token), 
-                      redis:Redis =Depends(get_redis)):
+async def limited_jwt(token:dict = Depends(verify_access_token),
+                      redis:Redis =Depends(get_redis_sync)):
     
     await rate_limiter_fixed(redis_client=redis,
                              uuid=token['uuid'])
@@ -98,28 +98,30 @@ async def rate_limiter_fixed(redis_client:Redis,
 rate limiting (fixed window)
 데코레이터로 작성시 특정 엔드포인트에 적용이 간단함.
 구성이 어려움...
+fastapi-limiter 라이브러리
+slowapi
 """
-# def rate_limiter_fixed(redis_client:Redis, 
-#                 #  uuid: str, 이렇게 받으면 데코레이터 생성시 uuid 고정되버림
+def rate_limiter_fixed(redis_client:Redis, 
+                #  uuid: str, 이렇게 받으면 데코레이터 생성시 uuid 고정되버림
                 
-#                  limit:int=config.RATE_LIMIT,
-#                  window:int=config.RATE_WINDOW,
-#                  key_func =  lambda token:token
-#                  ):
-#     def decorator(func):
-#         @wraps(func)
-#         async def wrapper(*args, **kwargs):
-#             token = kwargs.get("token", None)
-#             key = config.RATE_PREFIX + key_func(token)
+                 limit:int=config.RATE_LIMIT,
+                 window:int=config.RATE_WINDOW,
+                 key_func =  lambda token:token
+                 ):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            token = kwargs.get("token", None)
+            key = config.RATE_PREFIX + key_func(token)
             
-#             current = await redis_client.incr(key)
-#             if current == 1: # 첫 api 콜이면 만료 설정
-#                 await redis_client.expire(key, window)
-#             if current > limit: # api 콜이 일정 횟수 넘어가면 exception
-#                 raise HTTPException(status_code=429, detail="Too many requests")
-#             return await func(*args, **kwargs)
-#         return wrapper
-#     return decorator
+            current = await redis_client.incr(key)
+            if current == 1: # 첫 api 콜이면 만료 설정
+                await redis_client.expire(key, window)
+            if current > limit: # api 콜이 일정 횟수 넘어가면 exception
+                raise HTTPException(status_code=429, detail="Too many requests")
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 

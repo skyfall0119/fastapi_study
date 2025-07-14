@@ -2,6 +2,10 @@ from redis.asyncio import Redis, ConnectionPool
 from redis.exceptions import RedisError, ConnectionError
 from utils import config
 
+"""
+싱글톤 방식
+
+"""
 class RedisRepo:
     """Redis 싱글톤 객체"""
     _instance = None
@@ -27,5 +31,20 @@ class RedisRepo:
     
 async def get_redis():
     return await RedisRepo.get_instance()
+######################################################
+
+"""
+모듈레벨 싱글톤 방식
+lifespan 에서 redis 초기화 후 get_redis_sync 함수로 객체 반환
+"""
+redis_instance = None
+
+async def init_redis():
+    global redis_instance
+    if redis_instance is None:
+        redis_instance = await RedisRepo.get_instance()
+        
+def get_redis_sync():
+    return redis_instance
     
     
