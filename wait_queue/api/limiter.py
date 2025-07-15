@@ -34,12 +34,11 @@ my_api = decorator(my_api)
 """
 
 from fastapi import Request, HTTPException, APIRouter, Depends
-from repository.redis_repo import get_redis_sync, Redis
+from repository.redis_repo import get_redis_sync, Redis, RedisRepo
 import time
 from utils import config
 from utils.logger import get_logger
 from utils.util import create_access_token, verify_access_token
-from redis.asyncio import Redis
 from functools import wraps
 
 
@@ -47,30 +46,6 @@ router = APIRouter(prefix="/limited")
 logger = get_logger(__name__)
 
 
-## rate limiting 테스트
-@router.get("/")
-async def limited_endpoint(token:str = Depends(verify_access_token), 
-                           redis:Redis =Depends(get_redis_sync)):
-    try:
-        await rate_limiter_fixed(redis_client=redis,
-                                uuid=token['uuid'])
-    except HTTPException as e:
-        logger.warning(e)
-        raise e
-    return {"msg": "ok"}
-
-
-
-## rate limiting 테스트
-## 의존성 주입
-@router.get("/jwt/")
-async def limited_jwt(token:dict = Depends(verify_access_token),
-                      redis:Redis =Depends(get_redis_sync)):
-    
-    await rate_limiter_fixed(redis_client=redis,
-                             uuid=token['uuid'])
-
-    return {"msg": "ok"}
 
 
 """
@@ -102,45 +77,28 @@ rate limiting (fixed window)
 fastapi-limiter 라이브러리
 slowapi
 """
-# def rate_limiter_fixed(redis_client:Redis, 
-#                 #  uuid: str, 이렇게 받으면 데코레이터 생성시 uuid 고정되버림
-                
-#                  limit:int=config.RATE_LIMIT,
-#                  window:int=config.RATE_WINDOW,
-#                  key_func =  lambda token:token
-#                  ):
-#     def decorator(func):
-#         @wraps(func)
-#         async def wrapper(*args, **kwargs):
-#             token = kwargs.get("token", None)
-#             key = config.RATE_PREFIX + key_func(token)
+def rate_limiter_deco_fixed( 
+                 limit:int= config.RATE_LIMIT,
+                 window:int= config.RATE_WINDOW,
+                 ):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # redis_client = get_redis_sync()
+            redis_client = await RedisRepo.get_instance()
+            token = kwargs.get("token", None)
+            # logger.warning(f"deco called {token}")
+            key = config.RATE_PREFIX + token['uuid']
             
-#             current = await redis_client.incr(key)
-#             if current == 1: # 첫 api 콜이면 만료 설정
-#                 await redis_client.expire(key, window)
-#             if current > limit: # api 콜이 일정 횟수 넘어가면 exception
-#                 raise HTTPException(status_code=429, detail="Too many requests")
-#             return await func(*args, **kwargs)
-#         return wrapper
-#     return decorator
-
-
-
-## rate limiting 데코레이터 테스트.
-## 미구현
-# @app.get("/limited/")
-# @rate_limiter_fixed(redis_client= Depends(get_redis), 
-#                     limit=3, 
-#                     window=10,
-#                     key_func= lambda token: token  # Use token(uuid) as limiter key
-#                     )
-# async def limited_endpoint(token:str):
-
-
-#     return {"msg": "ok"}
-
-
-
+            current = await redis_client.incr(key)
+            # logger.warning(f"deco called {current}")
+            if current == 1: # 첫 api 콜이면 만료 설정
+                await redis_client.expire(key, window)
+            if current > limit: # api 콜이 일정 횟수 넘어가면 exception
+                raise HTTPException(status_code=429, detail="Too many requests")
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 """
@@ -181,8 +139,8 @@ def rate_limiter_sliding_window(redis_client:Redis,
 5. Redis에 상태 갱신
 
 """
-
 def rate_limiter_token_bucket(
+
     redis_client:Redis,
     uuid: str,
     refill_rate: float,   # 초당 몇 개 충전
@@ -221,3 +179,31 @@ def rate_limiter_token_bucket(
     pipe.expire(key_tokens, int(capacity / refill_rate) + 10)
     pipe.expire(key_last_ts, int(capacity / refill_rate) + 10)
     pipe.execute()
+    
+    
+    
+## rate limiting 테스트
+@router.get("/")
+async def limited_endpoint(token:dict = Depends(verify_access_token), 
+                           redis:Redis =Depends(get_redis_sync)):
+    try:
+        await rate_limiter_fixed(redis_client=redis,
+                                uuid=token['uuid'])
+    except HTTPException as e:
+        logger.warning(e)
+        raise e
+    return {"msg": "ok"}
+
+
+
+## rate limiting 테스트
+## 의존성 주입
+@router.get("/deco/")
+@rate_limiter_deco_fixed(limit=config.RATE_LIMIT, 
+                         window=config.RATE_WINDOW)
+async def limited_deco(token:dict = Depends(verify_access_token),
+                      redis:Redis =Depends(get_redis_sync)):
+    
+    
+
+    return {"msg": "ok"}
