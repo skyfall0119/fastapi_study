@@ -3,9 +3,10 @@ import json
 import websocket
 from utils import config
 import time
+from fastapi import HTTPException
 
 class WaitQueueUser(HttpUser):
-    wait_time = between(1, 2)
+    wait_time = between(1, 5)
     LIMITED_URL = "/limited/"
 
     @task
@@ -33,12 +34,12 @@ class WaitQueueUser(HttpUser):
             while True:
                 try:
                     msg = ws.recv()
-                    print(f"[Locust] Received: {msg}")
+                    # print(f"[Locust] Received: {msg}")
                     if not msg.strip():  # 빈 문자열 또는 공백 무시
                         continue
-                    msg = json.loads(msg)
-                    if "uuid" in msg:
-                        token = msg['uuid']
+                    token = json.loads(msg)
+                    # if "access_token" in token:
+                    #     token = msg['access_token']
                 except websocket.WebSocketConnectionClosedException:
                     # print("[Locust] WebSocket closed by server (TTL 만료 등)")
                     break
@@ -49,11 +50,13 @@ class WaitQueueUser(HttpUser):
             if token:
                 try:
                     for _ in range(config.RATE_LIMIT+1):
-                        resp = self.client.get("/limited/", params={"token":token})
-                        print(resp)
+                        resp = self.client.get("/limited/", params={"token":token['access_token']})
+                        # print(resp)
                         if resp.status_code == 429:
-                            print(f"{token}: too many request")
+                            print(f"too many request")
                             break
+                except HTTPException as e:
+                    print("limit exceeded")
                 except Exception as e:
                     print(f"[Locust] error calling limited {e}")
                 time.sleep(10)
