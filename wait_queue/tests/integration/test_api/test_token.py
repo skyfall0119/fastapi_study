@@ -25,7 +25,7 @@
 
 import pytest
 from httpx import AsyncClient
-from utils.util import verify_access_token
+from utils.util import decode_token
 
 @pytest.mark.asyncio
 async def test_generate_token():
@@ -37,7 +37,7 @@ async def test_generate_token():
 
         assert "access_token" in data
         ## decode jwt token
-        decoded = verify_access_token(data['access_token'])
+        decoded = decode_token(data['access_token'])
         print(decoded)
         assert "uuid" in decoded
         assert "status" in decoded

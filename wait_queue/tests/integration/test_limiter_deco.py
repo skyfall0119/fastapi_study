@@ -40,14 +40,16 @@ async def test_rate_limiter_deco_fixed():
         for token in active_tokens:
             print(f"\n\ntoken: {token} {type(token)}")
             tk = token['access_token']
+            header = {"Authorization" : f"Bearer {tk}"}
             for _ in range(config.RATE_LIMIT):
-                resp = await client.get(LIMITED_URL, params={"token": tk})
+                
+                resp = await client.get(LIMITED_URL, headers=header)
                 print(f"{resp}")
                 assert resp.status_code == 200
                 assert resp.json()["msg"] == "ok"
                 
             # 최대 리밋 후 한번 더 콜하면 out
-            resp = await client.get(LIMITED_URL, params={"token": tk})
+            resp = await client.get(LIMITED_URL, headers=header)
             print(f"should be limited {resp}")
             assert resp.status_code == 429
             print(f"sleeping for window length {config.RATE_WINDOW}")
@@ -55,5 +57,5 @@ async def test_rate_limiter_deco_fixed():
             
             # 윈도우만큼 기다렸다 다시 콜.
             print(f"after window")
-            resp = await client.get(LIMITED_URL, params={"token": tk})
+            resp = await client.get(LIMITED_URL, headers=header)
             print(f"{resp}")

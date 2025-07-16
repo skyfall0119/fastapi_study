@@ -18,7 +18,7 @@ async def websocket_endpoint(websocket: WebSocket,
         await websocket.accept()
         data = await websocket.receive_text()
         token = json.loads(data)['access_token']
-        token_decoded = TokenResponse(**util.verify_access_token(token))
+        token_decoded = TokenResponse(**util.decode_token(token))
         # 웹소켓 추가
         attch = await observer.attach(token_decoded, websocket)
         logger.info(attch)

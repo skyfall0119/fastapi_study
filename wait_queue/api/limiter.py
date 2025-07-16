@@ -33,12 +33,12 @@ my_api = decorator(my_api)
 
 """
 
-from fastapi import Request, HTTPException, APIRouter, Depends
+from fastapi import HTTPException, APIRouter, Depends
 from repository.redis_repo import get_redis_sync, Redis, RedisRepo
 import time
 from utils import config
 from utils.logger import get_logger
-from utils.util import create_access_token, verify_access_token
+from utils.util import verify_access_token
 from functools import wraps
 
 
@@ -87,14 +87,13 @@ def rate_limiter_deco_fixed(
             # redis_client = get_redis_sync()
             redis_client = await RedisRepo.get_instance()
             token = kwargs.get("token", None)
-            # logger.warning(f"deco called {token}")
             key = config.RATE_PREFIX + token['uuid']
             
             current = await redis_client.incr(key)
-            # logger.warning(f"deco called {current}")
             if current == 1: # 첫 api 콜이면 만료 설정
                 await redis_client.expire(key, window)
             if current > limit: # api 콜이 일정 횟수 넘어가면 exception
+                logger.warning(f"Too many requests: {token['uuid']}")
                 raise HTTPException(status_code=429, detail="Too many requests")
             return await func(*args, **kwargs)
         return wrapper
