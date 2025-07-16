@@ -91,7 +91,11 @@ api 콜 제한 알고리즘
 - sliding window
 - token bucket
 
-tests\integration\test_limiter.py   
+데코레이터로도 구현 완료 (api.limiter.rate_limiter_deco_fixed) 
+- 테스트 코드 작성 완료
+- tests\integration\test_limiter_deco.py  
+
+tests\integration\test_limiter.py  
 fixed_window 테스트 내용  
 - rate limit: 5 회 / 10초  
 - 테스트 인원: 3명  
