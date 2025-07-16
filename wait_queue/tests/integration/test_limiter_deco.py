@@ -39,8 +39,7 @@ async def test_rate_limiter_deco_fixed():
         # 3. active 된 토큰으로 /limited 호출 (rate limit 3회 허용)
         for token in active_tokens:
             print(f"\n\ntoken: {token} {type(token)}")
-            tk = token['access_token']
-            header = {"Authorization" : f"Bearer {tk}"}
+            header = {"Authorization" : f"Bearer {token['access_token']}"}
             for _ in range(config.RATE_LIMIT):
                 
                 resp = await client.get(LIMITED_URL, headers=header)

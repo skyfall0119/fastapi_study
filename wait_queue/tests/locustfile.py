@@ -49,8 +49,9 @@ class WaitQueueUser(HttpUser):
             
             if token:
                 try:
+                    header = {"Authorization" : f"Bearer {token['access_token']}"}
                     for _ in range(config.RATE_LIMIT+1):
-                        resp = self.client.get("/limited/", params={"token":token['access_token']})
+                        resp = self.client.get("/limited/", headers=header)
                         # print(resp)
                         if resp.status_code == 429:
                             print(f"too many request")
