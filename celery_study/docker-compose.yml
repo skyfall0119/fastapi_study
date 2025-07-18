@@ -16,6 +16,8 @@ services:
       - "8000:8000"
     depends_on:
       - redis
+    environment:
+      - REDIS_HOST=redis
 
   celery:
     image: python:3.12
@@ -25,3 +27,5 @@ services:
     working_dir: /app
     depends_on:
       - redis
+    environment:
+      - REDIS_HOST=redis

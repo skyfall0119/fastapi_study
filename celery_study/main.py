@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from celery_worker import task_1
+from celery_worker import task_1, celery_app
 from celery.result import AsyncResult
 
 app = FastAPI()
@@ -17,7 +17,7 @@ def run_add(a: int, b: int):
 
 @app.get("/result/{task_id}")
 def get_result(task_id: str):
-    result = AsyncResult(task_id)
+    result = celery_app.AsyncResult(task_id)
     if result.ready():
         return {"status": "done", "result": result.result}
     return {"status": "pending"}

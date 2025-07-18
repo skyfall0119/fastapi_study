@@ -62,3 +62,26 @@ Result Backend (보통 Redis): 작업 완료 후 결과 저장 (선택적)
 
 
 ---
+### 간단한 테스트
+1. 도커로 실행 (fastapi, redis, celery)
+```
+    docker-compose up --build
+```
+
+2. 작업 호출
+ - celery 작업 아이디를 반환받는다.
+```
+    localhost:8000/add/2/5
+```
+![alt text](image-1.png)
+
+
+3. 결과 확인
+ - 반환받은 작업 아이디로 결과를 확인한다
+ - 작업중일때는 pending 을 반환
+```
+    localhost:8000/result/{id}
+```
+![alt text](image-2.png)
+![alt text](image-3.png)
+
