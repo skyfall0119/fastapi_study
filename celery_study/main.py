@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from celery_worker import task_1, celery_app
-from celery.result import AsyncResult
 
 app = FastAPI()
 
@@ -10,6 +9,7 @@ app = FastAPI()
 def root():
     return {"message": "Hello, Celery"}
 
+## simple celery 
 @app.get("/add/{a}/{b}")
 def run_add(a: int, b: int):
     task = task_1.delay(a, b)
