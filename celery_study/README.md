@@ -38,14 +38,17 @@ Result Backend (보통 Redis): 작업 완료 후 결과 저장 (선택적)
                                                 ↓
                                               결과 저장 → Redis(Result Backend)
 ```
-- delay()로 작업을 큐에 넣으면
+- task 를 작업을 큐에 넣음 
+    - task.delay() -> 간단 / 기본 호출 방식
+    - task.apply() -> 즉시 실행 / 테스트 및 디버깅
+    - task.apply_async() -> 세밀한 제어가 필요할때
+        - countdown, eta, expires, priority 등
 
 - Redis가 중간에서 메시지를 저장/중계하고
 
 - Celery Worker가 Redis에서 메시지를 꺼내 실행
 
 - 결과를 Redis 등에 저장해 나중에 조회 가능
-
 ---
 
 ### 실전에서 어디에 쓰는가
