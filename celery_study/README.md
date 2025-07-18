@@ -3,8 +3,8 @@
 ### 소개
 FastAPI, Redis, celery 를 이용한 비동기 작업 큐 프레임워크 예제
 단순계산은 redis 를 사용할 필요 없이 celery 만 사용해도 되지만 지금 처리하지 않고 나중에 처리해도 되는 작업을 백그라운드에서 처리하는 것이 주요 목적
-https://docs.celeryq.dev/en/latest/getting-started/introduction.html
-https://github.com/celery/celery/
+- https://docs.celeryq.dev/en/latest/getting-started/introduction.html
+- https://github.com/celery/celery/
 ```
 pip install celery
 ```
